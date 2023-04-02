@@ -37,28 +37,40 @@ class Users(Resource):
     userPassword = request.json['password']
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
     userBio = request.json['bio']
+    userRankPoints = request.json['rankPoints']
     conn.execute(
-      "insert into aluno values(null, '{0}','{1}','{2}','{3}')".format(
-        userName, hashedPass.decode('utf8'), userBio, userEmail))
+      "insert into aluno values(null, '{0}','{1}','{2}','{3}','{4}')".format(
+        userName, hashedPass.decode('utf8'), userBio, userEmail, userRankPoints))
     query = conn.execute('select * from aluno order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+  def patchRankPoints(self):
+      conn = db_connect.connect()
+      id = request.json['id']
+      userRankPoints = request.json['rankPoints']
+      print(userRankPoints)
+      #conn.execute("update aluno set rankPoints='" + int(userRankPoints) + "' where id =%d " % int(id))
+      #query = conn.execute("select * from aluno where id=%d " % int(id))
+      #result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+      #return jsonify(result)
+      return id
+      
+      
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     id = request.json['id']
-    name = request.json['name']
-    email = request.json['email']
-    password = request.json['password']
-    hashed = bcrypt.hashpw(password.encode("utf8"), bcrypt.gensalt())
-    bio = request.json['bio']
+    userName = request.json['name']
+    userEmail = request.json['email']
+    userPassword = request.json['password']
+    hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
+    userBio = request.json['bio']
+    userRankPoints = request.json['rankPoints']
     #rankPoints = request.json['rankPoints']
     #challenge = request.json['challenge']
     #socialNetwork = request.json['socialNetwork']
 
-    conn.execute("update aluno set name ='" + str(name) + "', email ='" +
-                 str(email) + "', password='" + hashed.decode("utf8") + "', bio= '" +
-                 str(bio) + "' where id =%d " % int(id))
+    conn.execute("update aluno set name ='" + str(userName) + "', email ='" + str(userEmail) + "', password='" + hashedPass.decode("utf8") + "', bio= '" + str(userBio) + "', rankPoints='" + int(userRankPoints) + "' where id =%d " % int(id))
 
     query = conn.execute("select * from aluno where id=%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -210,7 +222,6 @@ class UserByLogin(Resource):
 
 @app.route("/var", methods=["POST"]) # Login
 def var_aluno():
-    
     aluno = request.json
     userById = UserById()
     userByLogin = UserByLogin() # -> Pegar login e senha, para verificar.
@@ -228,8 +239,7 @@ def var_aluno():
         return {"message" : 202}
     else:
         return {"message" : 403}
-    
-    
+
 api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersByLogin/<login>')
