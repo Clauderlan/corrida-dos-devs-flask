@@ -27,17 +27,17 @@ class Users(Resource):
     conn = db_connect.connect()
     query = conn.execute("select * from aluno")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    #print(result[2]) -> User per User
     return jsonify(result)
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
     conn = db_connect.connect()
-
-    userName = request.json['name']
-    userEmail = request.json['email']
-    userPassword = request.json['password']
+    userName = request.json['userName']
+    userEmail = request.json['userEmail']
+    userPassword = request.json['userPassword']
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
-    userBio = request.json['bio']
-    userRankPoints = request.json['rankPoints']
+    userBio = request.json['userBio']
+    userRankPoints = request.json['userRankPoints']
     conn.execute(
       "insert into aluno values(null, '{0}','{1}','{2}','{3}','{4}')".format(
         userName, hashedPass.decode('utf8'), userBio, userEmail, userRankPoints))
@@ -45,7 +45,7 @@ class Users(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def patchRankPoints(self):
+  def patchUserRankPoints(self):
       conn = db_connect.connect()
       id = request.json['id']
       userRankPoints = request.json['rankPoints']
@@ -60,12 +60,12 @@ class Users(Resource):
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     id = request.json['id']
-    userName = request.json['name']
-    userEmail = request.json['email']
-    userPassword = request.json['password']
+    userName = request.json['userName']
+    userEmail = request.json['userEmail']
+    userPassword = request.json['userPassword']
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
-    userBio = request.json['bio']
-    userRankPoints = request.json['rankPoints']
+    userBio = request.json['userBio']
+    userRankPoints = request.json['userRankPoints']
     #rankPoints = request.json['rankPoints']
     #challenge = request.json['challenge']
     #socialNetwork = request.json['socialNetwork']
@@ -87,10 +87,10 @@ class Material(Resource):
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
     conn = db_connect.connect()
-    materialTitle = request.json['title']
-    materialDescription = request.json['description']
-    materialThumbnailUrl = request.json['thumbnailUrl']
-    materialDataView = request.json['dataView']
+    materialTitle = request.json['materialTitle']
+    materialDescription = request.json['materialDescription']
+    materialThumbnailUrl = request.json['materialThumbnailUrl']
+    materialDataView = request.json['materialDataView']
 
     conn.execute(
       "insert into material values(null, '{0}','{1}', '{2}', '{3}')".format(
@@ -102,18 +102,18 @@ class Material(Resource):
 
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
-    id = request.json['id']
-    materialTitle = request.json['title']
-    materialDescription = request.json['description']
-    materialThumbnailUrl = request.json['thumbnailUrl']
-    materialDataView = request.json['dataView']
+    materialId = request.json['materialId']
+    materialTitle = request.json['materialTitle']
+    materialDescription = request.json['materialDescription']
+    materialThumbnailUrl = request.json['materialThumbnailUrl']
+    materialDataView = request.json['materialDataView']
 
     conn.execute("update material set title ='" + str(materialTitle) +
                  "', description ='" + str(materialDescription) + "', thumbnailUrl='" +
-                 str(materialThumbnailUrl) + "', dataView='" + str(materialDataView) +
-                 "'  where id =%d " % int(id))
+                 str(materialThumbnailUrl) + "', visibilityDate='" + str(materialDataView) +
+                 "'  where id =%d " % int(materialId))
 
-    query = conn.execute("select * from material where id=%d " % int(id))
+    query = conn.execute("select * from material where id=%d " % int(materialId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
@@ -199,7 +199,6 @@ class ChallengeResponse(Resource):
 
 
 class UserById(Resource): 
-
   def delete(self, id): # Deleta no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     conn.execute("delete from aluno where id=%d " % int(id))
@@ -219,6 +218,18 @@ class UserByLogin(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
+
+class MaterialById(Resource): 
+  def delete(self, id): # Deleta no BD de um material passado como parâmetro
+    conn = db_connect.connect()
+    conn.execute("delete from material where id=%d " % int(id))
+    return {"status": "success"}
+
+  def get(self, id): # Busca no BD um material passado como parâmetro
+    conn = db_connect.connect()
+    query = conn.execute("select * from material where id =%d " % int(id))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return result
 
 @app.route("/var", methods=["POST"]) # Login
 def var_aluno():
@@ -244,6 +255,7 @@ api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersByLogin/<login>')
 api.add_resource(Material, '/material')
+api.add_resource(MaterialById, '/material/<id>')
 api.add_resource(Challenges, '/challenges')
 api.add_resource(ChallengeResponse, '/challengesResponse')
 
