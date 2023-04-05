@@ -45,19 +45,17 @@ class Users(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def patchUserRankPoints(self):
+  def patch(self): # Request //-> id, patchAtribute, 
       
       conn = db_connect.connect()
       id = request.json['id']
-      #passar a responsibilidade da string pro front
-      userRankPoints = request.json['rankPoints']
-      print(userRankPoints)
-      #conn.execute("update aluno set rankPoints='" + int(userRankPoints) + "' where id =%d " % int(id))
-      #query = conn.execute("select * from user where id=%d " % int(id))
-      #result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-      #return jsonify(result)
-      return id
-      
+      patchColumn = request.json['patchColumn']
+      valueColumn = request.json['valueColumn']
+      conn.execute("update user set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, id))
+      #conn.execute("update user set " + patchColumn + "='" + int(userRankPoints) + "' where id =%d " % int(id))
+      query = conn.execute("select * from user where id=%d " % int(id))
+      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+      return jsonify(result)      
       
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
@@ -77,7 +75,6 @@ class Users(Resource):
     query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id=%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
-
 
 class Material(Resource):
 
@@ -118,7 +115,6 @@ class Material(Resource):
     query = conn.execute("select * from material where id=%d " % int(materialId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
-
 
 class Challenges(Resource):
 
@@ -192,12 +188,11 @@ class ChallengeResponse(Resource):
     userId = request.json['userId']
     challengeId = request.json['challengeId']
 
-    conn.execute("update challengeResponse set challengeId ='" + str(challengeId) + "', userId ='" + str(userId) + "', challengeLinkResponse='" + str(challengeLinkResponse) + "' where id =%d " % int(id)) # Pode haver erro nas aspas.
+    conn.execute("update challengeResponse set challengeId ='" + str(challengeId) + "', userId ='" + str(userId) + "', challengeLinkResponse='" + str(challengeLinkResponse) + "' where id =%d " % int(id))
 
     query = conn.execute("select * from challengeResponse where id=%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
-
 
 class UserById(Resource): 
   def delete(self, id): # Deleta no BD de um usuário passado como parâmetro
@@ -210,7 +205,6 @@ class UserById(Resource):
     query = conn.execute("select * from user where id =%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
-
 
 class UserByLogin(Resource): 
   def get(self, login): # Busca no BD um usuário passado como parâmetro
