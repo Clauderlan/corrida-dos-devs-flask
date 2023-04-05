@@ -25,7 +25,7 @@ class Users(Resource):
 
   def get(self):  # Mostra todos os usuários cadastrados no BD
     conn = db_connect.connect()
-    query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user")
+    query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     #print(result[2]) -> User per User
     return jsonify(result)
@@ -44,16 +44,15 @@ class Users(Resource):
     query = conn.execute('select id, userName, userbio, useremail, userrankpoints from user order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
-
-  def patch(self): # Request //-> id, patchAtribute, 
+      
+  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
       
       conn = db_connect.connect()
-      id = request.json['id']
+      userId = request.json['userId']
       patchColumn = request.json['patchColumn']
       valueColumn = request.json['valueColumn']
-      conn.execute("update user set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, id))
-      #conn.execute("update user set " + patchColumn + "='" + int(userRankPoints) + "' where id =%d " % int(id))
-      query = conn.execute("select * from user where id=%d " % int(id))
+      conn.execute("update user set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, userId))
+      query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id=%d " % int(userId))
       result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
       return jsonify(result)      
       
@@ -62,16 +61,13 @@ class Users(Resource):
     id = request.json['id']
     userName = request.json['userName']
     userEmail = request.json['userEmail']
-    userPassword = request.json['userPassword']
+    userPassword = request["userPassword"]
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
     userBio = request.json['userBio']
     userRankPoints = request.json['userRankPoints']
     
 
     conn.execute("update user set username ='" + str(userName) + "', useremail ='" + str(userEmail) + "', userpassword='" + hashedPass.decode("utf8") + "', userbio= '" + str(userBio) + "', userrankPoints= " + str(userRankPoints) + " where id =%d " % int(id))
-
-      
-      
     query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id=%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
@@ -98,6 +94,17 @@ class Material(Resource):
     query = conn.execute('select * from material order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
+
+  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
+
+      conn = db_connect.connect()
+      materialId = request.json['materialId']
+      patchColumn = request.json['patchColumn']
+      valueColumn = request.json['valueColumn']
+      conn.execute("update material set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, materialId))
+      query = conn.execute('select * from material where id = {0}'.format(materialId))
+      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+      return jsonify(result)
 
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
@@ -141,6 +148,16 @@ class Challenges(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
+
+      conn = db_connect.connect()
+      challengeId = request.json['challengeId']
+      patchColumn = request.json['patchColumn']
+      valueColumn = request.json['valueColumn']
+      conn.execute("update challenge set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, challengeId))
+      query = conn.execute('select * from challenge where id = {0}'.format(challengeId))
+      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+      return jsonify(result)
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     id = request.json['id']
@@ -181,6 +198,17 @@ class ChallengeResponse(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
+
+      conn = db_connect.connect()
+      challengeResponseId = request.json['challengeResponseId']
+      patchColumn = request.json['patchColumn']
+      valueColumn = request.json['valueColumn']
+      conn.execute("update challengeResponse set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, challengeResponseId))
+      query = conn.execute('select * from challengeresponse where id = {0}'.format(challengeResponseId))
+      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+      return jsonify(result)
+    
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     id = request.json['id']
