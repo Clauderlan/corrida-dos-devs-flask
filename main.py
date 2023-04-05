@@ -78,6 +78,10 @@ class Material(Resource):
     conn = db_connect.connect()
     query = conn.execute("select * from material")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    print(len(result))
+    materialContent = MaterialContentById()
+    for x in result:
+        x["materialContentList"] = materialContent.get(x["id"])
     return jsonify(result)
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
@@ -87,16 +91,13 @@ class Material(Resource):
     materialThumbnailUrl = request.json['materialThumbnailUrl']
     materialDataView = request.json['materialDataView']
 
-    conn.execute(
-      "insert into material values(null, '{0}','{1}', '{2}', '{3}')".format(
-        materialTitle, materialDescription, materialThumbnailUrl, materialDataView))
+    conn.execute("insert into material values(null, '{0}','{1}', '{2}', '{3}')".format(materialTitle, materialDescription, materialThumbnailUrl, materialDataView))
 
     query = conn.execute('select * from material order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
   def patch(self): # Patch para atualizar determinado atributo passado pelo request.
-
       conn = db_connect.connect()
       materialId = request.json['materialId']
       patchColumn = request.json['patchColumn']
@@ -123,6 +124,31 @@ class Material(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+class MaterialContent(Resource):
+    
+    def get(self):  # Mostra todos os materias cadastrados no BD
+        conn = db_connect.connect()
+        query = conn.execute("select * from materialContentList")
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
+        
+    def post(self):  # Inclui no BD um usuário passado como parâmetro
+        conn = db_connect.connect()
+        materialContent = request.json['materialContent']
+        conn.execute("insert into materialContentList values(null, '{0}')".format(materialContent))
+        query = conn.execute('select * from materialContentList order by id desc limit 1')
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
+
+    def put(self): # Patch para atualizar determinado atributo passado pelo request.
+        conn = db_connect.connect()
+        materialContentId = request.json['materialContentId']
+        materialContent = request.json['materialContent']
+        conn.execute("update materialContentList set materialContent = '{0}' where id = '{1}'".format(materialContent, str(materialContentId)))
+        query = conn.execute('select * from materialContentList where id = {0}'.format(str(materialContentId)))
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
+
 class Challenges(Resource):
 
   def get(self):  # Mostra todos os usuários cadastrados no BD
@@ -140,9 +166,7 @@ class Challenges(Resource):
     challengeImageURL = request.json['challengeImageURL']
     challengePoints = request.json['challengePoints']
 
-    conn.execute(
-      "insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')"
-      .format(challengeTitle, challengeBio, challengeRequirements, challengeDeadline, challengeImageURL, challengePoints))
+    conn.execute("insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')".format(challengeTitle, challengeBio, challengeRequirements, challengeDeadline, challengeImageURL, challengePoints))
 
     query = conn.execute('select * from challenge order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -253,6 +277,13 @@ class MaterialById(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
+class MaterialContentById(Resource): 
+  def get(self, id): # Busca no BD um usuário passado como parâmetro
+    conn = db_connect.connect()
+    query = conn.execute('select * from materialContentList where id = "%d"' % int(id))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return result
+
 @app.route("/var", methods=["POST"]) # Login
 def var_user():
     user = request.json
@@ -277,7 +308,9 @@ api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersbylogin/<login>')
 api.add_resource(Material, '/material')
+api.add_resource(MaterialContent, '/materialcontent')
 api.add_resource(MaterialById, '/material/<id>')
+api.add_resource(MaterialContentById, '/materialcontent/<id>')
 api.add_resource(Challenges, '/challenges')
 api.add_resource(ChallengeResponse, '/challengesresponse')
 
