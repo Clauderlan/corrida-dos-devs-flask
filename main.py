@@ -28,6 +28,9 @@ class Users(Resource):
     query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     #print(result[2]) -> User per User
+    challengeContent = ChallengeContentById()
+    for x in result:
+        x["userChallengesResponse"] = challengeContent.get(x["id"])
     return jsonify(result)
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
@@ -43,6 +46,7 @@ class Users(Resource):
         userName, hashedPass.decode('utf8'), userBio, userEmail, userRankPoints))
     query = conn.execute('select id, userName, userbio, useremail, userrankpoints from user order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+      
     return jsonify(result)
       
   def patch(self): # Patch para atualizar determinado atributo passado pelo request.
@@ -65,7 +69,6 @@ class Users(Resource):
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
     userBio = request.json['userBio']
     userRankPoints = request.json['userRankPoints']
-    
 
     conn.execute("update user set username ='" + str(userName) + "', useremail ='" + str(userEmail) + "', userpassword='" + hashedPass.decode("utf8") + "', userbio= '" + str(userBio) + "', userrankPoints= " + str(userRankPoints) + " where id =%d " % int(id))
     query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id=%d " % int(id))
@@ -78,7 +81,6 @@ class Material(Resource):
     conn = db_connect.connect()
     query = conn.execute("select * from material")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-    print(len(result))
     materialContent = MaterialContentById()
     for x in result:
         x["materialContentList"] = materialContent.get(x["id"])
@@ -277,12 +279,36 @@ class MaterialById(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
+class ChallengesById(Resource): 
+  def delete(self, id): # Deleta no BD de um material passado como parâmetro
+    conn = db_connect.connect()
+    conn.execute("delete from challenge where id=%d " % int(id))
+    return {"status": "success"}
+
+  def get(self, id): # Busca no BD um material passado como parâmetro
+    conn = db_connect.connect()
+    query = conn.execute("select * from challenge where id =%d " % int(id))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return result
+
 class MaterialContentById(Resource): 
   def get(self, id): # Busca no BD um usuário passado como parâmetro
     conn = db_connect.connect()
     query = conn.execute('select * from materialContentList where id = "%d"' % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
+      
+class ChallengeContentById(Resource): 
+  def get(self, userid): # Busca no BD um usuário passado como parâmetro
+    conn = db_connect.connect()
+    query = conn.execute('select * from challengeResponse where userid = "%d"' % int(userid))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    listChallenges = []
+    for x in result:
+      queryC = conn.execute('select challengeTitle from challenge where id = "%d"' % int(x["challengeId"]))
+      resultC = [dict(zip(tuple(queryC.keys()), i)) for i in queryC.cursor]
+      listChallenges.append(resultC[0]["challengeTitle"])
+    return listChallenges
 
 @app.route("/var", methods=["POST"]) # Login
 def var_user():
@@ -307,12 +333,16 @@ def var_user():
 api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersbylogin/<login>')
+
 api.add_resource(Material, '/material')
 api.add_resource(MaterialContent, '/materialcontent')
 api.add_resource(MaterialById, '/material/<id>')
 api.add_resource(MaterialContentById, '/materialcontent/<id>')
+
 api.add_resource(Challenges, '/challenges')
+api.add_resource(ChallengesById, '/challenges/<id>')
 api.add_resource(ChallengeResponse, '/challengesresponse')
+api.add_resource(ChallengeContentById, '/challengesresponse/<userid>')
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', debug=True)
