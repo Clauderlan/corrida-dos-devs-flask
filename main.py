@@ -87,11 +87,12 @@ class Material(Resource):
   def post(self):  # Inclui no BD um usuário passado como parâmetro
     conn = db_connect.connect()
     materialTitle = request.json['materialTitle']
-    materialDescription = request.json['materialDescription']
-    materialThumbnailUrl = request.json['materialThumbnailUrl']
-    materialDataView = request.json['materialDataView']
+    materialVideoUrl = request.json['materialVideoUrl']
+    materialIdealFor = request.json['materialIdealFor']
+    materialDetailedInformation = request.json['materialDetailedInformation']
+    materialShortInformation = request.json['materialShortInformation']
 
-    conn.execute("insert into material values(null, '{0}','{1}', '{2}', '{3}')".format(materialTitle, materialDescription, materialThumbnailUrl, materialDataView))
+    conn.execute("insert into material values(null, '{0}','{1}', '{2}', '{3}', '{4}')".format(materialTitle, materialVideoUrl, materialIdealFor, materialDetailedInformation, materialShortInformation))
 
     query = conn.execute('select * from material order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -111,14 +112,13 @@ class Material(Resource):
     conn = db_connect.connect()
     materialId = request.json['materialId']
     materialTitle = request.json['materialTitle']
-    materialDescription = request.json['materialDescription']
-    materialThumbnailUrl = request.json['materialThumbnailUrl']
-    materialDataView = request.json['materialDataView']
+    materialVideoUrl = request.json['materialVideoUrl']
+    materialIdealFor = request.json['materialIdealFor']
+    materialDetailedInformation = request.json['materialDetailedInformation']
+    materialShortInformation = request.json['materialShortInformation']
 
     conn.execute("update material set materialtitle ='" + str(materialTitle) +
-                 "', materialdescription ='" + str(materialDescription) + "', materialImageURL='" +
-                 str(materialThumbnailUrl) + "', materialvisibilityDate='" + str(materialDataView) +
-                 "'  where id =%d " % int(materialId))
+"', materialVideoUrl ='" + str(materialVideoUrl) + "', materialIdealFor='" + str(materialIdealFor) + "', materialDetailedInformation='" + str(materialDetailedInformation) + "', materialShortInformation='" + str(materialShortInformation) + "'  where id =%d " % int(materialId))
 
     query = conn.execute("select * from material where id=%d " % int(materialId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -184,7 +184,7 @@ class Challenges(Resource):
       return jsonify(result)
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
-    id = request.json['id']
+    challengeId = request.json['challengeId']
     challengeTitle = request.json['challengeTitle']
     challengeDescription = request.json['challengeDescription']
     challengeRequirements = request.json['challengeRequirements']
@@ -196,9 +196,9 @@ class Challenges(Resource):
                  str(challengeDescription) + "', challengeimageUrl='" + str(challengeImageURL) +
                  "', challengerequirements ='" + str(challengeRequirements) + "', challengedeadline='" +
                  str(challengeDeadline) + "', challengepoints='" + str(challengePoints) +
-                 "'  where id =%d " % int(id))
+                 "'  where id =%d " % int(challengeId))
 
-    query = conn.execute("select * from challenge where id=%d " % int(id))
+    query = conn.execute("select * from challenge where id=%d " % int(challengeId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
@@ -235,7 +235,7 @@ class ChallengeResponse(Resource):
     
   def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
-    id = request.json['id']
+    id = request.json['challengeResponseId']
     challengeLinkResponse = request.json['challengeLinkResponse']
     userId = request.json['userId']
     challengeId = request.json['challengeId']
