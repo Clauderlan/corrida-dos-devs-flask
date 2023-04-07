@@ -27,10 +27,12 @@ class Users(Resource):
     conn = db_connect.connect()
     query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-    #print(result[2]) -> User per User
-    challengeContent = ChallengeContentById()
+    challengeContent = ChallengeContentByUserId()
+    categoryRule = CategoryByUserId()
     for x in result:
         x["userChallengesResponse"] = challengeContent.get(x["id"])
+        x["userRule"] = categoryRule.get(x["id"])
+        
     return jsonify(result)
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
@@ -41,9 +43,7 @@ class Users(Resource):
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
     userBio = request.json['userBio']
     userRankPoints = request.json['userRankPoints']
-    conn.execute(
-      "insert into aluno values(null, '{0}','{1}','{2}','{3}','{4}')".format(
-        userName, hashedPass.decode('utf8'), userBio, userEmail, userRankPoints))
+    conn.execute("insert into aluno values(null, '{0}','{1}','{2}','{3}','{4}')".format(userName, hashedPass.decode('utf8'), userBio, userEmail, userRankPoints))
     query = conn.execute('select id, userName, userbio, useremail, userrankpoints from user order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
       
@@ -75,9 +75,27 @@ class Users(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+class Category(Resource):
+
+    def get(self):
+        conn = db_connect.connect()
+        query = conn.execute("select * from category order by id desc")
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
+        
+    def post(self):
+        conn = db_connect.connect()
+        categoryRule = request.json['categoryRule']
+        categoryName = request.json['categoryName'] # Posso deixar independente do front.
+        userId = request.json['userId']
+        conn.execute("insert into category values(null, '{0}','{1}','{2}')".format(categoryRule, categoryName, userId))
+        query = conn.execute('select * from category')
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
+
 class Material(Resource):
 
-  def get(self):  # Mostra todos os usuários cadastrados no BD
+  def get(self):
     conn = db_connect.connect()
     query = conn.execute("select * from material")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -86,7 +104,7 @@ class Material(Resource):
         x["materialContentList"] = materialContent.get(x["id"])
     return jsonify(result)
 
-  def post(self):  # Inclui no BD um usuário passado como parâmetro
+  def post(self):
     conn = db_connect.connect()
     materialTitle = request.json['materialTitle']
     materialVideoUrl = request.json['materialVideoUrl']
@@ -128,13 +146,13 @@ class Material(Resource):
 
 class MaterialContent(Resource):
     
-    def get(self):  # Mostra todos os materias cadastrados no BD
+    def get(self):
         conn = db_connect.connect()
         query = conn.execute("select * from materialContentList")
         result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
         return jsonify(result)
         
-    def post(self):  # Inclui no BD um usuário passado como parâmetro
+    def post(self):
         conn = db_connect.connect()
         materialContent = request.json['materialContent']
         conn.execute("insert into materialContentList values(null, '{0}')".format(materialContent))
@@ -153,13 +171,13 @@ class MaterialContent(Resource):
 
 class Challenges(Resource):
 
-  def get(self):  # Mostra todos os usuários cadastrados no BD
+  def get(self):
     conn = db_connect.connect()
     query = conn.execute("select * from challenge")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def post(self):  # Inclui no BD um usuário passado como parâmetro
+  def post(self):
     conn = db_connect.connect()
     challengeTitle = request.json['challengeTitle']
     challengeBio = request.json['challengeBio']
@@ -206,13 +224,13 @@ class Challenges(Resource):
 
 class ChallengeResponse(Resource):
 
-  def get(self):  # Mostra todos os usuários cadastrados no BD
+  def get(self):
     conn = db_connect.connect()
     query = conn.execute("select * from challengeResponse")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def post(self):  # Inclui no BD um usuário passado como parâmetro
+  def post(self):
     conn = db_connect.connect()
     challengeLinkResponse = request.json['challengeLinkResponse']
     userId = request.json['userId']
@@ -249,7 +267,7 @@ class ChallengeResponse(Resource):
     return jsonify(result)
 
 class UserById(Resource): 
-  def delete(self, id): # Deleta no BD de um usuário passado como parâmetro
+  def delete(self, id): # Deleta no BD um usuário passado como parâmetro
     conn = db_connect.connect()
     conn.execute("delete from user where id=%d " % int(id))
     return {"status": "success"}
@@ -280,28 +298,28 @@ class MaterialById(Resource):
     return result
 
 class ChallengesById(Resource): 
-  def delete(self, id): # Deleta no BD de um material passado como parâmetro
+  def delete(self, id):
     conn = db_connect.connect()
     conn.execute("delete from challenge where id=%d " % int(id))
     return {"status": "success"}
 
-  def get(self, id): # Busca no BD um material passado como parâmetro
+  def get(self, id):
     conn = db_connect.connect()
     query = conn.execute("select * from challenge where id =%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
 class MaterialContentById(Resource): 
-  def get(self, id): # Busca no BD um usuário passado como parâmetro
+  def get(self, id):
     conn = db_connect.connect()
     query = conn.execute('select * from materialContentList where id = "%d"' % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
       
-class ChallengeContentById(Resource): 
-  def get(self, userid): # Busca no BD um usuário passado como parâmetro
+class ChallengeContentByUserId(Resource): 
+  def get(self, userId):
     conn = db_connect.connect()
-    query = conn.execute('select * from challengeResponse where userid = "%d"' % int(userid))
+    query = conn.execute('select * from challengeResponse where userid = "%d"' % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     listChallenges = []
     for x in result:
@@ -310,6 +328,14 @@ class ChallengeContentById(Resource):
       listChallenges.append(resultC[0]["challengeTitle"])
     return listChallenges
 
+class CategoryByUserId(Resource): 
+
+  def get(self, userId):
+    conn = db_connect.connect()
+    query = conn.execute("select categoryRule from category where userId =%d " % int(userId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return result
+      
 @app.route("/var", methods=["POST"]) # Login
 def var_user():
     user = request.json
@@ -334,6 +360,9 @@ api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersbylogin/<login>')
 
+api.add_resource(Category, '/category')
+api.add_resource(CategoryByUserId, '/category/<userId>')
+
 api.add_resource(Material, '/material')
 api.add_resource(MaterialContent, '/materialcontent')
 api.add_resource(MaterialById, '/material/<id>')
@@ -342,7 +371,7 @@ api.add_resource(MaterialContentById, '/materialcontent/<id>')
 api.add_resource(Challenges, '/challenges')
 api.add_resource(ChallengesById, '/challenges/<id>')
 api.add_resource(ChallengeResponse, '/challengesresponse')
-api.add_resource(ChallengeContentById, '/challengesresponse/<userid>')
+api.add_resource(ChallengeContentByUserId, '/challengesresponse/<userId>')
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', debug=True)
