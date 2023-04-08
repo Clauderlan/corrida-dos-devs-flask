@@ -363,15 +363,12 @@ class SocialByUserId(Resource):
 @app.route("/var", methods=["POST"]) # Login
 def var_user():
     user = request.json
-    userById = UserById()
-    userByLogin = UserByLogin() # -> Pegar login e senha, para verificar.
-
-    if(not(userByLogin.get(user["login"]))): # Verificando se esse login existe na base de dados.
+    byLogin = UserByLogin() # -> Pegar login e senha, para verificar.
+    userByLogin = byLogin.get(user["login"])
+    
+    if(not(userByLogin)): # Verificando se esse login existe na base de dados.
         return {"message" : 403}
-    else:
-        userGetLogin = userByLogin.get(user["login"])[0] # Buscando o userById do UserLogin - Creio que esteja obsoleto.
-        hashed = userById.get(userGetLogin["id"])[0]["password"] # Password do banco
-        # Sempre termina em [0], porque retorna uma lista de JSON.
+    hashed = userByLogin[0]["userPassword"] # Password do banco
     password = user["password"] # Password da requisição
     password = password.encode('utf8') # Transformando em byte
     hashed = hashed.encode('utf8') # Transformando em byte
