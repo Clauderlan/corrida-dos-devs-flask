@@ -1,11 +1,10 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from sqlalchemy import create_engine
 import bcrypt
-from json import dumps
 from flask_cors import CORS, cross_origin
 
-#Precisa instalar os 4 pacotes: clica em packages e digita o nome do pacote
+#Precisa instalar os 4 pacotes:
 #Flask
 #Flask-SQLAlchemy
 #Flask-Restful
@@ -20,7 +19,6 @@ app.config["JSON_SORT_KEYS"] = False # Não ordernar o JSON
 api = Api(app)
 cors = CORS(app)
 
-
 class Users(Resource):
 
   def get(self):  # Mostra todos os usuários cadastrados no BD
@@ -29,10 +27,11 @@ class Users(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     challengeContent = ChallengeContentByUserId()
     categoryRule = CategoryByUserId()
+    socialName = SocialByUserId()
     for x in result:
         x["userChallengesResponse"] = challengeContent.get(x["id"])
         x["userRule"] = categoryRule.get(x["id"])
-        
+        x["socialName"] = socialName.get(x["id"])
     return jsonify(result)
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
@@ -74,6 +73,23 @@ class Users(Resource):
     query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id=%d " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
+
+class SocialNetwork(Resource):
+    
+    def get(self):
+        conn = db_connect.connect()
+        query = conn.execute("select * from socialNetwork order by id desc")
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
+
+    def post(self):
+        conn = db_connect.connect()
+        socialName = request.json['socialName']
+        userId = request.json['userId']
+        conn.execute("insert into socialNetwork values(null, '{0}','{1}')".format(socialName, userId))
+        query = conn.execute('select * from socialNetwork')
+        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+        return jsonify(result)
 
 class Category(Resource):
 
@@ -335,7 +351,15 @@ class CategoryByUserId(Resource):
     query = conn.execute("select categoryRule from category where userId =%d " % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
-      
+
+class SocialByUserId(Resource): 
+
+  def get(self, userId):
+    conn = db_connect.connect()
+    query = conn.execute("select socialName from socialNetwork where userId =%d " % int(userId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return result
+
 @app.route("/var", methods=["POST"]) # Login
 def var_user():
     user = request.json
@@ -359,6 +383,9 @@ def var_user():
 api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersbylogin/<login>')
+
+api.add_resource(SocialNetwork, '/socialnetwork')
+api.add_resource(SocialByUserId, '/socialnetwork/<userId>')
 
 api.add_resource(Category, '/category')
 api.add_resource(CategoryByUserId, '/category/<userId>')
