@@ -3,7 +3,7 @@ from flask_restful import Resource, Api
 from sqlalchemy import create_engine
 import bcrypt
 from flask_cors import CORS, cross_origin
-
+from JWT import create_jwt, verify_and_decode_jwt, iniciandoJWT
 #Precisa instalar os 4 pacotes:
 #Flask
 #Flask-SQLAlchemy
@@ -350,7 +350,7 @@ class CategoryByUserId(Resource):
     conn = db_connect.connect()
     query = conn.execute("select categoryRule from category where userId = '%d' " % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-    return result
+    return result[0]["categoryRule"]
 
 class SocialByUserId(Resource): 
 
@@ -373,9 +373,12 @@ def var_user():
     password = password.encode('utf8') # Transformando em byte
     hashed = hashed.encode('utf8') # Transformando em byte
     if(bcrypt.hashpw(password, hashed) == hashed):
-        return {"message" : 202}
+        roleById = CategoryByUserId()
+        userId = userByLogin[0]["id"]
+        jwt = iniciandoJWT(userId, roleById.get(userId)) # userId, Role
+        return {"JWT" : jwt}, 202
     else:
-        return {"message" : 403}
+        return {"message" : 403}, 403
 
 api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
