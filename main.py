@@ -24,9 +24,7 @@ class Users(Resource):
 
   def get(self):  # Mostra todos os usuários cadastrados no BD
     conn = db_connect.connect()
-    query = conn.execute(
-      "select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc"
-    )
+    query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc")
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     challengeContent = ChallengeContentByUserId()
     categoryRule = CategoryByUserId()
@@ -379,6 +377,16 @@ class UserById(Resource):
     conn = db_connect.connect()
     query = conn.execute("select * from user where id = '%d' " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    if(not(result)): # Caso o usuário no id não exista
+        return {"message" : "no users"}, 402
+      
+    challengeContent = ChallengeContentByUserId()
+    categoryRule = CategoryByUserId()
+    socialName = SocialByUserId()
+    result = result[0] # Tirando o resultado da lista.
+    result["userChallengesResponse"] = challengeContent.get(result["id"])
+    result["userRule"] = categoryRule.get(result["id"])
+    result["socialName"] = socialName.get(result["id"])
     return result
 
 
@@ -497,7 +505,6 @@ def var_user():
     return {"JWT": jwt}, 202
   else:
     return {"message": "Crendenciais inválidas"}, 403
-
 
 api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
