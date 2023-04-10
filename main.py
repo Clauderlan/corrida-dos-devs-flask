@@ -15,23 +15,26 @@ db_connect = create_engine('sqlite:///sqlite.db')
 
 ##Coloca o servidor Web no ar
 app = Flask(__name__)
-app.config["JSON_SORT_KEYS"] = False # Não ordernar o JSON
+app.config["JSON_SORT_KEYS"] = False  # Não ordernar o JSON
 api = Api(app)
 cors = CORS(app)
+
 
 class Users(Resource):
 
   def get(self):  # Mostra todos os usuários cadastrados no BD
     conn = db_connect.connect()
-    query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc")
+    query = conn.execute(
+      "select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc"
+    )
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     challengeContent = ChallengeContentByUserId()
     categoryRule = CategoryByUserId()
     socialName = SocialByUserId()
     for x in result:
-        x["userChallengesResponse"] = challengeContent.get(x["id"])
-        x["userRule"] = categoryRule.get(x["id"])
-        x["socialName"] = socialName.get(x["id"])
+      x["userChallengesResponse"] = challengeContent.get(x["id"])
+      x["userRule"] = categoryRule.get(x["id"])
+      x["socialName"] = socialName.get(x["id"])
     return jsonify(result)
 
   def post(self):  # Inclui no BD um usuário passado como parâmetro
@@ -42,24 +45,35 @@ class Users(Resource):
     hashedPass = bcrypt.hashpw(userPassword.encode('utf8'), bcrypt.gensalt())
     userBio = request.json['userBio']
     userRankPoints = request.json['userRankPoints']
-    conn.execute("insert into aluno values(null, '{0}','{1}','{2}','{3}','{4}')".format(userName, hashedPass.decode('utf8'), userBio, userEmail, userRankPoints))
-    query = conn.execute('select id, userName, userbio, useremail, userrankpoints from user order by id desc limit 1')
+    conn.execute(
+      "insert into user values(null, '{0}','{1}','{2}','{3}','{4}')".format(
+        userName, hashedPass.decode('utf8'), userBio, userEmail,
+        userRankPoints))
+    query = conn.execute(
+      'select id, userName, userbio, useremail, userrankpoints from user order by id desc limit 1'
+    )
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-      
+    print()
+    print(query)
+    print()
     return jsonify(result)
-      
-  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
-      
-      conn = db_connect.connect()
-      userId = request.json['userId']
-      patchColumn = request.json['patchColumn']
-      valueColumn = request.json['valueColumn']
-      conn.execute("update user set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, userId))
-      query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id= '%d' " % int(userId))
-      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-      return jsonify(result)      
-      
-  def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
+
+  def patch(self):  # Patch para atualizar determinado atributo passado pelo request.
+
+    conn = db_connect.connect()
+    userId = request.json['userId']
+    patchColumn = request.json['patchColumn']
+    valueColumn = request.json['valueColumn']
+    conn.execute("update user set {0} = '{1}' where id = '{2}'".format(
+      patchColumn, valueColumn, userId))
+    query = conn.execute(
+      "select id, userName, userbio, useremail, userrankpoints from user where id= '%d' "
+      % int(userId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def put(
+      self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     id = request.json['id']
     userName = request.json['userName']
@@ -69,45 +83,69 @@ class Users(Resource):
     userBio = request.json['userBio']
     userRankPoints = request.json['userRankPoints']
 
-    conn.execute("update user set username ='" + str(userName) + "', useremail ='" + str(userEmail) + "', userpassword='" + hashedPass.decode("utf8") + "', userbio= '" + str(userBio) + "', userrankPoints= " + str(userRankPoints) + " where id = '%d' " % int(id))
-    query = conn.execute("select id, userName, userbio, useremail, userrankpoints from user where id='%d' " % int(id))
+    conn.execute("update user set username ='" + str(userName) +
+                 "', useremail ='" + str(userEmail) + "', userpassword='" +
+                 hashedPass.decode("utf8") + "', userbio= '" + str(userBio) +
+                 "', userrankPoints= " + str(userRankPoints) +
+                 " where id = '%d' " % int(id))
+    query = conn.execute(
+      "select id, userName, userbio, useremail, userrankpoints from user where id='%d' "
+      % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-class SocialNetwork(Resource):
-    
-    def get(self):
-        conn = db_connect.connect()
-        query = conn.execute("select * from socialNetwork order by id desc")
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
 
-    def post(self):
-        conn = db_connect.connect()
-        socialName = request.json['socialName']
-        userId = request.json['userId']
-        conn.execute("insert into socialNetwork values(null, '{0}','{1}')".format(socialName, userId))
-        query = conn.execute('select * from socialNetwork')
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
+class SocialNetwork(Resource):
+
+  def get(self):
+    conn = db_connect.connect()
+    query = conn.execute("select * from socialNetwork order by id desc")
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def post(self):
+    conn = db_connect.connect()
+    socialName = request.json['socialName']
+    userId = request.json['userId']
+    conn.execute("insert into socialNetwork values(null, '{0}','{1}')".format(socialName, userId))
+    query = conn.execute('select * from socialNetwork')
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+
+  def patch(self):  # Patch para atualizar determinado atributo passado pelo request.
+
+    conn = db_connect.connect()
+    oldSocialName = request.json['oldSocialName']
+    userId = request.json['userId']
+    patchColumn = request.json['patchColumn']
+    valueColumn = request.json['valueColumn']
+    conn.execute("update socialNetwork set {0} = '{1}' where socialName = '{2}' and userId = '{3}'".format(patchColumn, valueColumn, oldSocialName, userId))
+    query = conn.execute("select * from socialNetwork where userId= '%d' " % int(userId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
 
 class Category(Resource):
 
-    def get(self):
-        conn = db_connect.connect()
-        query = conn.execute("select * from category order by id desc")
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
-        
-    def post(self):
-        conn = db_connect.connect()
-        categoryRule = request.json['categoryRule']
-        categoryName = request.json['categoryName'] # Posso deixar independente do front.
-        userId = request.json['userId']
-        conn.execute("insert into category values(null, '{0}','{1}','{2}')".format(categoryRule, categoryName, userId))
-        query = conn.execute('select * from category')
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
+  def get(self):
+    conn = db_connect.connect()
+    query = conn.execute("select * from category order by id desc")
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def post(self):
+    conn = db_connect.connect()
+    categoryRule = request.json['categoryRule']
+    categoryName = request.json[
+      'categoryName']  # Posso deixar independente do front.
+    userId = request.json['userId']
+    conn.execute("insert into category values(null, '{0}','{1}','{2}')".format(
+      categoryRule, categoryName, userId))
+    query = conn.execute('select * from category')
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
 
 class Material(Resource):
 
@@ -117,7 +155,7 @@ class Material(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     materialContent = MaterialContentById()
     for x in result:
-        x["materialContentList"] = materialContent.get(x["id"])
+      x["materialContentList"] = materialContent.get(x["id"])
     return jsonify(result)
 
   def post(self):
@@ -128,23 +166,30 @@ class Material(Resource):
     materialDetailedInformation = request.json['materialDetailedInformation']
     materialShortInformation = request.json['materialShortInformation']
 
-    conn.execute("insert into material values(null, '{0}','{1}', '{2}', '{3}', '{4}')".format(materialTitle, materialVideoUrl, materialIdealFor, materialDetailedInformation, materialShortInformation))
+    conn.execute(
+      "insert into material values(null, '{0}','{1}', '{2}', '{3}', '{4}')".
+      format(materialTitle, materialVideoUrl, materialIdealFor,
+             materialDetailedInformation, materialShortInformation))
 
     query = conn.execute('select * from material order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
-      conn = db_connect.connect()
-      materialId = request.json['materialId']
-      patchColumn = request.json['patchColumn']
-      valueColumn = request.json['valueColumn']
-      conn.execute("update material set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, materialId))
-      query = conn.execute("select * from material where id = '{0}'".format(materialId))
-      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-      return jsonify(result)
+  def patch(
+      self):  # Patch para atualizar determinado atributo passado pelo request.
+    conn = db_connect.connect()
+    materialId = request.json['materialId']
+    patchColumn = request.json['patchColumn']
+    valueColumn = request.json['valueColumn']
+    conn.execute("update material set {0} = '{1}' where id = '{2}'".format(
+      patchColumn, valueColumn, materialId))
+    query = conn.execute(
+      "select * from material where id = '{0}'".format(materialId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
 
-  def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
+  def put(
+      self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     materialId = request.json['materialId']
     materialTitle = request.json['materialTitle']
@@ -154,36 +199,52 @@ class Material(Resource):
     materialShortInformation = request.json['materialShortInformation']
 
     conn.execute("update material set materialtitle ='" + str(materialTitle) +
-"', materialVideoUrl ='" + str(materialVideoUrl) + "', materialIdealFor='" + str(materialIdealFor) + "', materialDetailedInformation='" + str(materialDetailedInformation) + "', materialShortInformation='" + str(materialShortInformation) + "'  where id = '%d' " % int(materialId))
+                 "', materialVideoUrl ='" + str(materialVideoUrl) +
+                 "', materialIdealFor='" + str(materialIdealFor) +
+                 "', materialDetailedInformation='" +
+                 str(materialDetailedInformation) +
+                 "', materialShortInformation='" +
+                 str(materialShortInformation) +
+                 "'  where id = '%d' " % int(materialId))
 
-    query = conn.execute("select * from material where id= '%d' " % int(materialId))
+    query = conn.execute("select * from material where id= '%d' " %
+                         int(materialId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-class MaterialContent(Resource):
-    
-    def get(self):
-        conn = db_connect.connect()
-        query = conn.execute("select * from materialContentList")
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
-        
-    def post(self):
-        conn = db_connect.connect()
-        materialContent = request.json['materialContent']
-        conn.execute("insert into materialContentList values(null, '{0}')".format(materialContent))
-        query = conn.execute('select * from materialContentList order by id desc limit 1')
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
 
-    def put(self): # Patch para atualizar determinado atributo passado pelo request.
-        conn = db_connect.connect()
-        materialContentId = request.json['materialContentId']
-        materialContent = request.json['materialContent']
-        conn.execute("update materialContentList set materialContent = '{0}' where id = '{1}'".format(materialContent, str(materialContentId)))
-        query = conn.execute("select * from materialContentList where id = '{0}'".format(str(materialContentId)))
-        result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-        return jsonify(result)
+class MaterialContent(Resource):
+
+  def get(self):
+    conn = db_connect.connect()
+    query = conn.execute("select * from materialContentList")
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def post(self):
+    conn = db_connect.connect()
+    materialContent = request.json['materialContent']
+    conn.execute("insert into materialContentList values(null, '{0}')".format(
+      materialContent))
+    query = conn.execute(
+      'select * from materialContentList order by id desc limit 1')
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def put(
+      self):  # Patch para atualizar determinado atributo passado pelo request.
+    conn = db_connect.connect()
+    materialContentId = request.json['materialContentId']
+    materialContent = request.json['materialContent']
+    conn.execute(
+      "update materialContentList set materialContent = '{0}' where id = '{1}'"
+      .format(materialContent, str(materialContentId)))
+    query = conn.execute(
+      "select * from materialContentList where id = '{0}'".format(
+        str(materialContentId)))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
 
 class Challenges(Resource):
 
@@ -202,23 +263,31 @@ class Challenges(Resource):
     challengeImageURL = request.json['challengeImageURL']
     challengePoints = request.json['challengePoints']
 
-    conn.execute("insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')".format(challengeTitle, challengeBio, challengeRequirements, challengeDeadline, challengeImageURL, challengePoints))
+    conn.execute(
+      "insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')"
+      .format(challengeTitle, challengeBio, challengeRequirements,
+              challengeDeadline, challengeImageURL, challengePoints))
 
     query = conn.execute('select * from challenge order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
+  def patch(
+      self):  # Patch para atualizar determinado atributo passado pelo request.
 
-      conn = db_connect.connect()
-      challengeId = request.json['challengeId']
-      patchColumn = request.json['patchColumn']
-      valueColumn = request.json['valueColumn']
-      conn.execute("update challenge set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, challengeId))
-      query = conn.execute("select * from challenge where id = '{0}'".format(challengeId))
-      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-      return jsonify(result)
-  def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
+    conn = db_connect.connect()
+    challengeId = request.json['challengeId']
+    patchColumn = request.json['patchColumn']
+    valueColumn = request.json['valueColumn']
+    conn.execute("update challenge set {0} = '{1}' where id = '{2}'".format(
+      patchColumn, valueColumn, challengeId))
+    query = conn.execute(
+      "select * from challenge where id = '{0}'".format(challengeId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def put(
+      self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     challengeId = request.json['challengeId']
     challengeTitle = request.json['challengeTitle']
@@ -228,15 +297,20 @@ class Challenges(Resource):
     challengeImageURL = request.json['challengeImageURL']
     challengePoints = request.json['challengePoints']
 
-    conn.execute("update challenge set challengetitle ='" + str(challengeTitle) + "', challengedescription ='" +
-                 str(challengeDescription) + "', challengeimageUrl='" + str(challengeImageURL) +
-                 "', challengerequirements ='" + str(challengeRequirements) + "', challengedeadline='" +
-                 str(challengeDeadline) + "', challengepoints='" + str(challengePoints) +
+    conn.execute("update challenge set challengetitle ='" +
+                 str(challengeTitle) + "', challengedescription ='" +
+                 str(challengeDescription) + "', challengeimageUrl='" +
+                 str(challengeImageURL) + "', challengerequirements ='" +
+                 str(challengeRequirements) + "', challengedeadline='" +
+                 str(challengeDeadline) + "', challengepoints='" +
+                 str(challengePoints) +
                  "'  where id = '%d' " % int(challengeId))
 
-    query = conn.execute("select * from challenge where id= '%d' " % int(challengeId))
+    query = conn.execute("select * from challenge where id= '%d' " %
+                         int(challengeId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
+
 
 class ChallengeResponse(Resource):
 
@@ -251,69 +325,100 @@ class ChallengeResponse(Resource):
     challengeLinkResponse = request.json['challengeLinkResponse']
     userId = request.json['userId']
     challengeId = request.json['challengeId']
-    conn.execute("insert into challengeresponse values(null, '{0}','{1}','{2}')".format(
-      challengeId, userId, challengeLinkResponse))
+    conn.execute(
+      "insert into challengeresponse values(null, '{0}','{1}','{2}')".format(
+        challengeId, userId, challengeLinkResponse))
     query = conn.execute(
       'select * from challengeResponse order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def patch(self): # Patch para atualizar determinado atributo passado pelo request.
+  def patch(
+      self):  # Patch para atualizar determinado atributo passado pelo request.
 
-      conn = db_connect.connect()
-      challengeResponseId = request.json['challengeResponseId']
-      patchColumn = request.json['patchColumn']
-      valueColumn = request.json['valueColumn']
-      conn.execute("update challengeResponse set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, challengeResponseId))
-      query = conn.execute("select * from challengeresponse where id = '{0}'".format(challengeResponseId))
-      result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-      return jsonify(result)
-    
-  def put(self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
+    conn = db_connect.connect()
+    challengeResponseId = request.json['challengeResponseId']
+    patchColumn = request.json['patchColumn']
+    valueColumn = request.json['valueColumn']
+    conn.execute(
+      "update challengeResponse set {0} = '{1}' where id = '{2}'".format(
+        patchColumn, valueColumn, challengeResponseId))
+    query = conn.execute(
+      "select * from challengeresponse where id = '{0}'".format(
+        challengeResponseId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
+  def put(
+      self):  # Update*(atualizar) no BD de um usuário passado como parâmetro
     conn = db_connect.connect()
     id = request.json['challengeResponseId']
     challengeLinkResponse = request.json['challengeLinkResponse']
     userId = request.json['userId']
     challengeId = request.json['challengeId']
 
-    conn.execute("update challengeResponse set challengeId ='" + str(challengeId) + "', userId ='" + str(userId) + "', challengeLinkResponse='" + str(challengeLinkResponse) + "' where id = '%d' " % int(id))
+    conn.execute("update challengeResponse set challengeId ='" +
+                 str(challengeId) + "', userId ='" + str(userId) +
+                 "', challengeLinkResponse='" + str(challengeLinkResponse) +
+                 "' where id = '%d' " % int(id))
 
-    query = conn.execute("select * from challengeResponse where id= '%d' " % int(id))
+    query = conn.execute("select * from challengeResponse where id= '%d' " %
+                         int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-class UserById(Resource): 
-  def delete(self, id): # Deleta no BD um usuário passado como parâmetro
+
+class UserById(Resource):
+
+  def delete(self, id):  # Deleta no BD um usuário passado como parâmetro
     conn = db_connect.connect()
     conn.execute("delete from user where id= '%d' " % int(id))
     return {"status": "success"}
 
-  def get(self, id): # Busca no BD um usuário passado como parâmetro
+  def get(self, id):  # Busca no BD um usuário passado como parâmetro
     conn = db_connect.connect()
     query = conn.execute("select * from user where id = '%d' " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
-class UserByLogin(Resource): 
-  def get(self, login): # Busca no BD um usuário passado como parâmetro
+
+class UserByLogin(Resource):
+
+  def get(self, login):  # Busca no BD um usuário passado como parâmetro
     conn = db_connect.connect()
-    query = conn.execute('select * from user where userName = "%s"' % str(login))
+    query = conn.execute('select * from user where userName = "%s"' %
+                         str(login))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
-class MaterialById(Resource): 
-  def delete(self, id): # Deleta no BD de um material passado como parâmetro
+
+class UserByEmail(Resource):
+
+  def post(self):  # Busca no BD um usuário passado como parâmetro
+    conn = db_connect.connect()
+    userEmail = request.json["userEmail"]
+    query = conn.execute('select * from user where userEmail = "%s"' %
+                         str(userEmail))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return result
+
+
+class MaterialById(Resource):
+
+  def delete(self, id):  # Deleta no BD de um material passado como parâmetro
     conn = db_connect.connect()
     conn.execute("delete from material where id= '%d' " % int(id))
     return {"status": "success"}
 
-  def get(self, id): # Busca no BD um material passado como parâmetro
+  def get(self, id):  # Busca no BD um material passado como parâmetro
     conn = db_connect.connect()
     query = conn.execute("select * from material where id = '%d' " % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
-class ChallengesById(Resource): 
+
+class ChallengesById(Resource):
+
   def delete(self, id):
     conn = db_connect.connect()
     conn.execute("delete from challenge where id= '%d' " % int(id))
@@ -325,64 +430,79 @@ class ChallengesById(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
-class MaterialContentById(Resource): 
+
+class MaterialContentById(Resource):
+
   def get(self, id):
     conn = db_connect.connect()
-    query = conn.execute('select * from materialContentList where id = "%d"' % int(id))
+    query = conn.execute('select * from materialContentList where id = "%d"' %
+                         int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
-      
-class ChallengeContentByUserId(Resource): 
+
+
+class ChallengeContentByUserId(Resource):
+
   def get(self, userId):
     conn = db_connect.connect()
-    query = conn.execute('select * from challengeResponse where userid = "%d"' % int(userId))
+    query = conn.execute(
+      'select * from challengeResponse where userid = "%d"' % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     listChallenges = []
     for x in result:
-      queryC = conn.execute('select challengeTitle from challenge where id = "%d"' % int(x["challengeId"]))
+      queryC = conn.execute(
+        'select challengeTitle from challenge where id = "%d"' %
+        int(x["challengeId"]))
       resultC = [dict(zip(tuple(queryC.keys()), i)) for i in queryC.cursor]
       listChallenges.append(resultC[0]["challengeTitle"])
     return listChallenges
 
-class CategoryByUserId(Resource): 
+
+class CategoryByUserId(Resource):
 
   def get(self, userId):
     conn = db_connect.connect()
-    query = conn.execute("select categoryRule from category where userId = '%d' " % int(userId))
+    query = conn.execute(
+      "select categoryRule from category where userId = '%d' " % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result[0]["categoryRule"]
 
-class SocialByUserId(Resource): 
+
+class SocialByUserId(Resource):
 
   def get(self, userId):
     conn = db_connect.connect()
-    query = conn.execute("select socialName from socialNetwork where userId = '%d' " % int(userId))
+    query = conn.execute(
+      "select socialName from socialNetwork where userId = '%d' " %
+      int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
-@app.route("/var", methods=["POST"]) # Login
+
+@app.route("/login", methods=["POST"])  # Login
 def var_user():
-    user = request.json
-    byLogin = UserByLogin() # -> Pegar login e senha, para verificar.
-    userByLogin = byLogin.get(user["login"])
-    
-    if(not(userByLogin)): # Verificando se esse login existe na base de dados.
-        return {"message" : 403}
-    hashed = userByLogin[0]["userPassword"] # Password do banco
-    password = user["password"] # Password da requisição
-    password = password.encode('utf8') # Transformando em byte
-    hashed = hashed.encode('utf8') # Transformando em byte
-    if(bcrypt.hashpw(password, hashed) == hashed):
-        roleById = CategoryByUserId()
-        userId = userByLogin[0]["id"]
-        jwt = iniciandoJWT(userId, roleById.get(userId)) # userId, Role
-        return {"JWT" : jwt}, 202
-    else:
-        return {"message" : 403}, 403
+  user = request.json  # LOGIN PASSWORD
+  byLogin = UserByLogin()  # -> Pegar login e senha, para verificar.
+  userByLogin = byLogin.get(user["login"])
+  if (not (userByLogin)):  # Verificando se esse login existe na base de dados.
+    return {"message": "Crendenciais inválidas"}
+  hashed = userByLogin[0]["userPassword"]  # Password do banco
+  password = user["password"]  # Password da requisição
+  password = password.encode('utf8')  # Transformando em byte
+  hashed = hashed.encode('utf8')  # Transformando em byte
+  if (bcrypt.hashpw(password, hashed) == hashed):
+    roleById = CategoryByUserId()
+    userId = userByLogin[0]["id"]
+    jwt = iniciandoJWT(userId, roleById.get(userId))  # userId, Role
+    return {"JWT": jwt}, 202
+  else:
+    return {"message": "Crendenciais inválidas"}, 403
+
 
 api.add_resource(Users, '/users')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersbylogin/<login>')
+api.add_resource(UserByEmail, '/usersbyemail')  # Post
 
 api.add_resource(SocialNetwork, '/socialnetwork')
 api.add_resource(SocialByUserId, '/socialnetwork/<userId>')
