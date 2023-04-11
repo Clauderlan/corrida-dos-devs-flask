@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from sqlalchemy import create_engine
 import bcrypt
-from flask_cors import CORS, cross_origin
-from JWT import create_jwt, verify_and_decode_jwt, iniciandoJWT
+from flask_cors import CORS
+from JWT import verify_and_decode_jwt, iniciandoJWT
 #Precisa instalar os 4 pacotes:
 #Flask
 #Flask-SQLAlchemy
@@ -135,8 +135,7 @@ class Category(Resource):
   def post(self):
     conn = db_connect.connect()
     categoryRule = request.json['categoryRule']
-    categoryName = request.json[
-      'categoryName']  # Posso deixar independente do front.
+    categoryName = request.json['categoryName']
     userId = request.json['userId']
     conn.execute("insert into category values(null, '{0}','{1}','{2}')".format(
       categoryRule, categoryName, userId))
@@ -222,15 +221,12 @@ class MaterialContent(Resource):
   def post(self):
     conn = db_connect.connect()
     materialContent = request.json['materialContent']
-    conn.execute("insert into materialContentList values(null, '{0}')".format(
-      materialContent))
-    query = conn.execute(
-      'select * from materialContentList order by id desc limit 1')
+    conn.execute("insert into materialContentList values(null, '{0}')".format(materialContent))
+    query = conn.execute('select * from materialContentList order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def put(
-      self):  # Patch para atualizar determinado atributo passado pelo request.
+  def put(self):  # Patch para atualizar determinado atributo passado pelo request.
     conn = db_connect.connect()
     materialContentId = request.json['materialContentId']
     materialContent = request.json['materialContent']
@@ -394,9 +390,18 @@ class UserByLogin(Resource):
 
   def get(self, login):  # Busca no BD um usuário passado como parâmetro
     conn = db_connect.connect()
-    query = conn.execute('select * from user where userName = "%s"' %
-                         str(login))
+    query = conn.execute('select * from user where userName = "%s"' % str(login))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    if(not(result)): # Caso o usuário no id não exista
+        return []
+      
+    challengeContent = ChallengeContentByUserId()
+    categoryRule = CategoryByUserId()
+    socialName = SocialByUserId()
+    result = result[0] # Tirando o resultado da lista.
+    result["userChallengesResponse"] = challengeContent.get(result["id"])
+    result["userRule"] = categoryRule.get(result["id"])
+    result["socialName"] = socialName.get(result["id"])
     return result
 
 
@@ -480,9 +485,7 @@ class SocialByUserId(Resource):
 
   def get(self, userId):
     conn = db_connect.connect()
-    query = conn.execute(
-      "select socialName from socialNetwork where userId = '%d' " %
-      int(userId))
+    query = conn.execute("select socialName from socialNetwork where userId = '%d' " % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
@@ -492,15 +495,15 @@ def var_user():
   user = request.json  # LOGIN PASSWORD
   byLogin = UserByLogin()  # -> Pegar login e senha, para verificar.
   userByLogin = byLogin.get(user["login"])
-  if (not (userByLogin)):  # Verificando se esse login existe na base de dados.
+  if (not(userByLogin)):  # Verificando se esse login existe na base de dados.
     return {"message": "Crendenciais inválidas"}
-  hashed = userByLogin[0]["userPassword"]  # Password do banco
+  hashed = userByLogin["userPassword"]  # Password do banco
   password = user["password"]  # Password da requisição
   password = password.encode('utf8')  # Transformando em byte
   hashed = hashed.encode('utf8')  # Transformando em byte
   if (bcrypt.hashpw(password, hashed) == hashed):
     roleById = CategoryByUserId()
-    userId = userByLogin[0]["id"]
+    userId = userByLogin["id"]
     jwt = iniciandoJWT(userId, roleById.get(userId))  # userId, Role
     return {"JWT": jwt}, 202
   else:
