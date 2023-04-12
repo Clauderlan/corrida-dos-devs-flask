@@ -96,6 +96,23 @@ class Users(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+class UsersBy10(Resource):
+
+  def get(self):  # Mostra todos os usuários cadastrados no BD, limitados 10.
+    conn = db_connect.connect()
+    query = conn.execute(
+      "select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc limit 10"
+    )
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    challengeContent = ChallengeContentByUserId()
+    categoryRule = CategoryByUserId()
+    socialName = SocialByUserId()
+    for x in result:
+      x["userChallengesResponse"] = challengeContent.get(x["id"])
+      x["userRule"] = categoryRule.get(x["id"])
+      x["socialName"] = socialName.get(x["id"])
+    return jsonify(result)
+
 
 class SocialNetwork(Resource):
 
@@ -275,9 +292,7 @@ class Challenges(Resource):
     challengePoints = request.json['challengePoints']
 
     conn.execute(
-      "insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')"
-      .format(challengeTitle, challengeBio, challengeRequirements,
-              challengeDeadline, challengeImageURL, challengePoints))
+      "insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')".format(challengeTitle, challengeBio, challengeRequirements, challengeDeadline, challengePoints, challengeImageURL ))
 
     query = conn.execute('select * from challenge order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -372,19 +387,20 @@ class ChallengeResponse(Resource):
     challengeLinkResponse = request.json['challengeLinkResponse']
     userId = request.json['userId']
     challengeId = request.json['challengeId']
+    challengeRated = request.json['challengeRated']
     conn.execute(
-      "insert into challengeresponse values(null, '{0}','{1}','{2}')".format(
-        challengeId, userId, challengeLinkResponse))
+      "insert into challengeresponse values(null, '{0}','{1}','{2}', '{3}')".format(
+        challengeId, userId, challengeLinkResponse, challengeRated))
     query = conn.execute(
       'select * from challengeResponse order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
-
   def patch(
       self):  # Patch para atualizar determinado atributo passado pelo request.
 
     conn = db_connect.connect()
     challengeResponseId = request.json['challengeResponseId']
+
     patchColumn = request.json['patchColumn']
     valueColumn = request.json['valueColumn']
     conn.execute(
@@ -579,6 +595,7 @@ def var_user():
 
 
 api.add_resource(Users, '/users')
+api.add_resource(UsersBy10, '/usersby10')
 api.add_resource(UserById, '/users/<id>')
 api.add_resource(UserByLogin, '/usersbylogin/<login>')
 api.add_resource(UserByEmail, '/usersbyemail')  # Post
