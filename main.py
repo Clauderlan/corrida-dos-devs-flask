@@ -26,7 +26,7 @@ class Users(Resource):
   def get(self):  # Mostra todos os usuários cadastrados no BD
     conn = db_connect.connect()
     query = conn.execute(
-      "select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc limit 10"
+      "select id, userName, userbio, useremail, userrankpoints from user order by userrankpoints desc"
     )
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     challengeContent = ChallengeContentByUserId()
@@ -69,7 +69,8 @@ class Users(Resource):
     conn.execute("update user set {0} = '{1}' where id = '{2}'".format(
       patchColumn, valueColumn, userId))
     query = conn.execute(
-      "select id, userName, userbio, useremail, userrankpoints from user where id= '%d' " % int(userId))
+      "select id, userName, userbio, useremail, userrankpoints from user where id= '%d' "
+      % int(userId))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
@@ -229,20 +230,26 @@ class MaterialContent(Resource):
     conn = db_connect.connect()
     materialContent = request.json['materialContent']
     materialId = request.json['materialId']
-    conn.execute("insert into materialContentList values(null, '{0}', '{1}')".format(materialContent, materialId))
-    query = conn.execute('select * from materialContentList order by id desc limit 1')
+    conn.execute(
+      "insert into materialContentList values(null, '{0}', '{1}')".format(
+        materialContent, materialId))
+    query = conn.execute(
+      'select * from materialContentList order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def put(self):  # Patch para atualizar determinado atributo passado pelo request.
+  def put(
+      self):  # Patch para atualizar determinado atributo passado pelo request.
     conn = db_connect.connect()
     materialContentId = request.json['materialContentId']
     materialContent = request.json['materialContent']
     materialId = request.json['materialId']
     conn.execute(
-      "update materialContentList set materialContent = '{0}', materialId = '{1}' where id = '{2}'".format(materialContent, materialId, str(materialContentId)))
+      "update materialContentList set materialContent = '{0}', materialId = '{1}' where id = '{2}'"
+      .format(materialContent, materialId, str(materialContentId)))
     query = conn.execute(
-      "select * from materialContentList where id = '{0}'".format(str(materialContentId)))
+      "select * from materialContentList where id = '{0}'".format(
+        str(materialContentId)))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
@@ -328,18 +335,26 @@ class ChallengeContent(Resource):
     conn = db_connect.connect()
     challengeContent = request.json['challengeContent']
     challengeId = request.json['challengeId']
-    conn.execute("insert into challengeContentList values(null, '{0}','{1}')".format(challengeContent, challengeId))
-    query = conn.execute('select * from challengeContentList order by id desc limit 1')
+    conn.execute(
+      "insert into challengeContentList values(null, '{0}','{1}')".format(
+        challengeContent, challengeId))
+    query = conn.execute(
+      'select * from challengeContentList order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
-  def put(self):  # Patch para atualizar determinado atributo passado pelo request.
+  def put(
+      self):  # Patch para atualizar determinado atributo passado pelo request.
     conn = db_connect.connect()
     challengeContentId = request.json['challengeContentId']
     challengeContent = request.json['challengeContent']
     challengeId = request.json['challengeId']
-    conn.execute("update challengeContentList set challengeContent = '{0}', challengeId = '{1}' where id = '{2}'".format(challengeContent, challengeId, str(challengeContentId)))
-    query = conn.execute("select * from challengeContentList where id = '{0}'".format(str(challengeContentId)))
+    conn.execute(
+      "update challengeContentList set challengeContent = '{0}', challengeId = '{1}' where id = '{2}'"
+      .format(challengeContent, challengeId, str(challengeContentId)))
+    query = conn.execute(
+      "select * from challengeContentList where id = '{0}'".format(
+        str(challengeContentId)))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
@@ -428,7 +443,7 @@ class UserByLogin(Resource):
 
   def get(self, login):  # Busca no BD um usuário passado como parâmetro
     conn = db_connect.connect()
-    query = conn.execute('select * from user where userName = "%s"' %
+    query = conn.execute('select * from user where userEmail = "%s"' %
                          str(login))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     if (not (result)):  # Caso o usuário no id não exista
@@ -487,7 +502,9 @@ class MaterialContentById(Resource):
 
   def get(self, id):
     conn = db_connect.connect()
-    query = conn.execute('select materialContent from materialContentList where materialId = "%d"' % int(id))
+    query = conn.execute(
+      'select materialContent from materialContentList where materialId = "%d"'
+      % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
@@ -496,7 +513,9 @@ class ChallengeContentById(Resource):
 
   def get(self, id):
     conn = db_connect.connect()
-    query = conn.execute('select challengeContent from challengeContentList where challengeId = "%d"' % int(id))
+    query = conn.execute(
+      'select challengeContent from challengeContentList where challengeId = "%d"'
+      % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return result
 
@@ -510,7 +529,9 @@ class ChallengeContentByUserId(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     listChallenges = []
     for x in result:
-      queryC = conn.execute('select challengeTitle from challenge where id = "%d"' % int(x["challengeId"]))
+      queryC = conn.execute(
+        'select challengeTitle from challenge where id = "%d"' %
+        int(x["challengeId"]))
       resultC = [dict(zip(tuple(queryC.keys()), i)) for i in queryC.cursor]
       listChallenges.append(resultC[0]["challengeTitle"])
     return listChallenges
