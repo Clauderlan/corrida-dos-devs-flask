@@ -54,9 +54,7 @@ class Users(Resource):
       'select id, userName, userbio, useremail, userrankpoints from user order by id desc limit 1'
     )
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-    print()
-    print(query)
-    print()
+
     return jsonify(result)
 
   def patch(
@@ -95,6 +93,7 @@ class Users(Resource):
       % int(id))
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
+
 
 class UsersBy10(Resource):
 
@@ -168,6 +167,27 @@ class Category(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
 
+  def patch(self):  # Patch para atualizar determinado atributo passado pelo request.
+    conn = db_connect.connect()
+    categoryId = request.json['categoryId']
+    patchColumn = request.json['patchColumn']
+    valueColumn = request.json['valueColumn']
+    conn.execute("update category set {0} = '{1}' where id = '{2}'".format(patchColumn, valueColumn, categoryId))
+    query = conn.execute("select * from category where id = '{0}'".format(categoryId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+    
+  def put(self):
+    conn = db_connect.connect()
+    categoryId = request.json["categoryId"]
+    categoryName = request.json["categoryName"]
+    categoryRule = request.json["categoryRule"]
+    userId = request.json["userId"]
+    conn.execute("update category set categoryName = '{0}', categoryRule = '{1}', userId = '{2}' where id = '{3}'".format(categoryName, categoryRule, userId, categoryId))
+    query = conn.execute('select * from category where id = "{0}"'.format(categoryId))
+    result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
+    return jsonify(result)
+
 
 class Material(Resource):
 
@@ -189,16 +209,13 @@ class Material(Resource):
     materialShortInformation = request.json['materialShortInformation']
 
     conn.execute(
-      "insert into material values(null, '{0}','{1}', '{2}', '{3}', '{4}')".
-      format(materialTitle, materialVideoUrl, materialIdealFor,
-             materialDetailedInformation, materialShortInformation))
+      "insert into material values(null, '{0}','{1}', '{2}', '{3}', '{4}')".format(materialTitle, materialVideoUrl, materialIdealFor, materialDetailedInformation, materialShortInformation))
 
     query = conn.execute('select * from material order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
-    return jsonify(result)
+    return result, 200
 
-  def patch(
-      self):  # Patch para atualizar determinado atributo passado pelo request.
+  def patch(self):  # Patch para atualizar determinado atributo passado pelo request.
     conn = db_connect.connect()
     materialId = request.json['materialId']
     patchColumn = request.json['patchColumn']
@@ -292,7 +309,9 @@ class Challenges(Resource):
     challengePoints = request.json['challengePoints']
 
     conn.execute(
-      "insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')".format(challengeTitle, challengeBio, challengeRequirements, challengeDeadline, challengePoints, challengeImageURL ))
+      "insert into challenge values(null, '{0}','{1}', '{2}', '{3}', '{4}', '{5}')"
+      .format(challengeTitle, challengeBio, challengeRequirements,
+              challengeDeadline, challengePoints, challengeImageURL))
 
     query = conn.execute('select * from challenge order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
@@ -389,12 +408,13 @@ class ChallengeResponse(Resource):
     challengeId = request.json['challengeId']
     challengeRated = request.json['challengeRated']
     conn.execute(
-      "insert into challengeresponse values(null, '{0}','{1}','{2}', '{3}')".format(
-        challengeId, userId, challengeLinkResponse, challengeRated))
+      "insert into challengeresponse values(null, '{0}','{1}','{2}', '{3}')".
+      format(challengeId, userId, challengeLinkResponse, challengeRated))
     query = conn.execute(
       'select * from challengeResponse order by id desc limit 1')
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     return jsonify(result)
+
   def patch(
       self):  # Patch para atualizar determinado atributo passado pelo request.
 
@@ -419,10 +439,10 @@ class ChallengeResponse(Resource):
     challengeLinkResponse = request.json['challengeLinkResponse']
     userId = request.json['userId']
     challengeId = request.json['challengeId']
-
+    challengeRated = request.json['challengeRated']
     conn.execute("update challengeResponse set challengeId ='" +
                  str(challengeId) + "', userId ='" + str(userId) +
-                 "', challengeLinkResponse='" + str(challengeLinkResponse) +
+                 "', challengeLinkResponse='" + str(challengeLinkResponse) +", rated = '" + str(challengeRated) +
                  "' where id = '%d' " % int(id))
 
     query = conn.execute("select * from challengeResponse where id= '%d' " %
@@ -545,11 +565,10 @@ class ChallengeContentByUserId(Resource):
     result = [dict(zip(tuple(query.keys()), i)) for i in query.cursor]
     listChallenges = []
     for x in result:
-      queryC = conn.execute(
-        'select challengeTitle from challenge where id = "%d"' %
-        int(x["challengeId"]))
+      queryC = conn.execute('select id from challenge where id = "%d"' %
+                            int(x["challengeId"]))
       resultC = [dict(zip(tuple(queryC.keys()), i)) for i in queryC.cursor]
-      listChallenges.append(resultC[0]["challengeTitle"])
+      listChallenges.append(resultC[0]["id"])
     return listChallenges
 
 
@@ -615,7 +634,7 @@ api.add_resource(Challenges, '/challenges')
 api.add_resource(ChallengesById, '/challenges/<id>')
 api.add_resource(ChallengeContent, '/challengescontent')
 api.add_resource(ChallengeResponse, '/challengesresponse')
-api.add_resource(ChallengeContentById, '/challengesresponse/<id>')
+api.add_resource(ChallengeContentById, '/challengescontent/<id>')
 api.add_resource(ChallengeContentByUserId, '/challengesresponse/<userId>')
 
 if __name__ == '__main__':
